@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hits 20 - Transmisión en Vivo</title>
+  
+  <!-- Variables globales de diseño y configuración de tamaños -->
+  <link rel="stylesheet" href="variables.css">
+  
+  <!-- Estilos del reproductor bajo metodología BEM -->
+  <link rel="stylesheet" href="player.css">
+</head>
+<body>
+
+  <!-- Bloque principal del reproductor -->
+  <main class="player">
+
+    <!-- Pantalla completa del reproductor de video -->
+    <div class="player__screen">
+      <iframe 
+        id="youtube-player"
+        class="player__iframe"
+        title="Reproductor en Vivo de YouTube"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen>
+      </iframe>
+    </div>
+
+    <!-- Capa flotante con badges, logo y cintillo informativo -->
+    <div class="player__overlay">
+
+      <!-- Cartel "EN VIVO" / Botón de administración (Arriba a la izquierda) -->
+      <aside 
+        id="btn-admin-trigger" 
+        class="player__badge" 
+        role="button" 
+        tabindex="0" 
+        aria-label="Indicador en vivo y administración">
+        <span class="player__badge-dot" aria-hidden="true"></span>
+        <span class="player__badge-text">EN VIVO</span>
+      </aside>
+
+      <!-- Logo superior (Arriba a la derecha) -->
+      <header class="player__logo">
+        <img 
+          src="hit.png" 
+          alt="Hits 20 Logo" 
+          class="player__logo-image" 
+          loading="eager"
+        >
+      </header>
+
+      <!-- Ticker inferior / Pasarela de noticias -->
+      <footer class="player__ticker" aria-label="Cinta de noticias">
+        <div class="player__ticker-track">
+
+          <!-- Grupo de texto 1 -->
+          <div class="player__ticker-group">
+            <span class="player__ticker-text"></span>
+          </div>
+
+          <!-- Grupo de texto 2 (Réplica exacta para bucle infinito) -->
+          <div class="player__ticker-group" aria-hidden="true">
+            <span class="player__ticker-text"></span>
+          </div>
+
+        </div>
+      </footer>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================================================
+       MODAL 1: AUTENTICACIÓN / LOGIN DE ADMINISTRADOR
+       ======================================================================== -->
+  <div id="admin-login-modal" class="admin" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="admin__backdrop"></div>
+
+    <div class="admin__dialog admin__dialog--login">
+      <header class="admin__header">
+        <h2 id="login-title" class="admin__title">Acceso de Administración</h2>
+        <button type="button" class="admin__close-btn" data-close-admin aria-label="Cerrar">&times;</button>
+      </header>
+
+      <form id="admin-login-form">
+        <div class="admin__body">
+          <div id="admin-login-alert" class="admin__alert"></div>
+
+          <div class="admin__field">
+            <label for="admin-user" class="admin__label">Usuario</label>
+            <input 
+              type="text" 
+              id="admin-user" 
+              class="admin__input" 
+              required 
+              autocomplete="off" 
+              placeholder="Ingresa tu usuario"
+            >
+          </div>
+
+          <div class="admin__field">
+            <label for="admin-pass" class="admin__label">Contraseña</label>
+            <input 
+              type="password" 
+              id="admin-pass" 
+              class="admin__input" 
+              required 
+              autocomplete="current-password" 
+              placeholder="Ingresa tu contraseña"
+            >
+          </div>
+        </div>
+
+        <footer class="admin__footer">
+          <button type="button" class="admin__btn admin__btn--secondary" data-close-admin>Cancelar</button>
+          <button type="submit" class="admin__btn admin__btn--primary">Ingresar</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 2: PANEL DE CONTROL DE TAMAÑOS, UBICACIÓN, YOUTUBE Y TEXTO
+       ======================================================================== -->
+  <div id="admin-panel-modal" class="admin" role="dialog" aria-modal="true" aria-labelledby="panel-title">
+    <div class="admin__backdrop"></div>
+
+    <div class="admin__dialog">
+      <header class="admin__header">
+        <h2 id="panel-title" class="admin__title">Panel de Control - Hits 20</h2>
+        <button type="button" class="admin__close-btn" data-close-admin aria-label="Cerrar panel">&times;</button>
+      </header>
+
+      <!-- Pestañas de navegación compacta -->
+      <nav class="admin__tabs" role="tablist">
+        <button type="button" class="admin__tab admin__tab--active" data-tab="all">Ver Todo</button>
+        <button type="button" class="admin__tab" data-tab="video">📺 Video</button>
+        <button type="button" class="admin__tab" data-tab="logo">🖼️ Logo</button>
+        <button type="button" class="admin__tab" data-tab="badge">🔴 En Vivo</button>
+        <button type="button" class="admin__tab" data-tab="ticker">📢 Ticker</button>
+      </nav>
+
+      <form id="admin-panel-form" class="admin__form">
+        <div class="admin__body">
+          <div id="admin-panel-alert" class="admin__alert"></div>
+
+          <!-- SECCIÓN: TRANSMISIÓN DE YOUTUBE -->
+          <section class="admin__section" data-tab-section="video">
+            <h3 class="admin__section-title">Transmisión de YouTube</h3>
+            <div class="admin__field">
+              <label for="cfg-youtube-url" class="admin__label">URL o ID del Canal / Stream</label>
+              <input 
+                type="text" 
+                id="cfg-youtube-url" 
+                class="admin__input" 
+                placeholder="https://www.youtube.com/watch?v=..."
+              >
+            </div>
+          </section>
+
+          <!-- SECCIÓN: LOGO (hit.png) -->
+          <section class="admin__section" data-tab-section="logo">
+            <h3 class="admin__section-title">Logo (hit.png)</h3>
+            
+            <div class="admin__field-grid">
+              <div class="admin__field">
+                <label for="cfg-logo-width" class="admin__label">
+                  <span>Ancho</span>
+                  <span class="admin__label-value" data-bind-label="cfg-logo-width" data-unit="px">30px</span>
+                </label>
+                <div class="admin__range-container">
+                  <input type="range" id="cfg-logo-width" class="admin__range" min="15" max="400" step="1">
+                </div>
+              </div>
+
+              <div class="admin__field">
+                <label for="cfg-logo-height" class="admin__label">
+                  <span>Alto</span>
+                  <span class="admin__label-value" data-bind-label="cfg-logo-height" data-unit="px">20px</span>
+                </label>
+                <div class="admin__range-container">
+                  <input type="range" id="cfg-logo-height" class="admin__range" min="10" max="300" step="1">
+                </div>
+              </div>
+            </div>
+
+            <div class="admin__field">
+              <label for="cfg-logo-scale" class="admin__label">
+                <span>Escala General</span>
+                <span class="admin__label-value" data-bind-label="cfg-logo-scale" data-unit="x">1x</span>
+              </label>
+              <div class="admin__range-container">
+                <input type="range" id="cfg-logo-scale" class="admin__range" min="0.5" max="3" step="0.1">
+              </div>
+            </div>
+
+            <div class="admin__field-grid">
+              <div class="admin__field">
+                <label for="cfg-logo-top" class="admin__label">
+                  <span>Posición Superior (Top)</span>
+                  <span class="admin__label-value" data-bind-label="cfg-logo-top" data-unit="px">15px</span>
+                </label>
+                <div class="admin__range-container">
+                  <input type="range" id="cfg-logo-top" class="admin__range" min="0" max="300" step="1">
+                </div>
+              </div>
+
+              <div class="admin__field">
+                <label for="cfg-logo-right" class="admin__label">
+                  <span>Posición Derecha (Right)</span>
+                  <span class="admin__label-value" data-bind-label="cfg-logo-right" data-unit="px">15px</span>
+                </label>
+                <div class="admin__range-container">
+                  <input type="range" id="cfg-logo-right" class="admin__range" min="0" max="300" step="1">
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECCIÓN: CARTEL "EN VIVO" -->
+          <section class="admin__section" data-tab-section="badge">
+            <h3 class="admin__section-title">Cartel "EN VIVO"</h3>
+
+            <div class="admin__field">
+              <label for="cfg-badge-scale" class="admin__label">
+                <span>Tamaño / Escala</span>
+                <span class="admin__label-value" data-bind-label="cfg-badge-scale" data-unit="x">1x</span>
+              </label>
+              <div class="admin__range-container">
+                <input type="range" id="cfg-badge-scale" class="admin__range" min="0.5" max="2.5" step="0.05">
+              </div>
+            </div>
+
+            <div class="admin__field-grid">
+              <div class="admin__field">
+                <label for="cfg-badge-top" class="admin__label">
+                  <span>Posición Superior (Top)</span>
+                  <span class="admin__label-value" data-bind-label="cfg-badge-top" data-unit="px">15px</span>
+                </label>
+                <div class="admin__range-container">
+                  <input type="range" id="cfg-badge-top" class="admin__range" min="0" max="300" step="1">
+                </div>
+              </div>
+
+              <div class="admin__field">
+                <label for="cfg-badge-left" class="admin__label">
+                  <span>Posición Izquierda (Left)</span>
+                  <span class="admin__label-value" data-bind-label="cfg-badge-left" data-unit="px">15px</span>
+                </label>
+                <div class="admin__range-container">
+                  <input type="range" id="cfg-badge-left" class="admin__range" min="0" max="300" step="1">
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECCIÓN: TICKER INFERIOR -->
+          <section class="admin__section" data-tab-section="ticker">
+            <h3 class="admin__section-title">Ticker / Pasarela de Noticias</h3>
+
+            <div class="admin__field">
+              <label for="cfg-ticker-text" class="admin__label">Texto en Movimiento</label>
+              <textarea id="cfg-ticker-text" class="admin__textarea" rows="2"></textarea>
+            </div>
+
+            <div class="admin__field-grid--3">
+              <div class="admin__field">
+                <label for="cfg-ticker-font-size" class="admin__label">
+                  <span>Tamaño Letra</span>
+                  <span class="admin__label-value" data-bind-label="cfg-ticker-font-size" data-unit="px">14px</span>
+                </label>
+                <div class="admin__range-container">
+                  <input type="range" id="cfg-ticker-font-size" class="admin__range" min="10" max="34" step="1">
+                </div>
+              </div>
+
+              <div class="admin__field">
+                <label for="cfg-ticker-height" class="admin__label">
+                  <span>Alto Fondo</span>
+                  <span class="admin__label-value" data-bind-label="cfg-ticker-height" data-unit="px">38px</span>
+                </label>
+                <div class="admin__range-container">
+                  <input type="range" id="cfg-ticker-height" class="admin__range" min="22" max="80" step="1">
+                </div>
+              </div>
+
+              <div class="admin__field">
+                <label for="cfg-ticker-speed" class="admin__label">
+                  <span>Velocidad</span>
+                  <span class="admin__label-value" data-bind-label="cfg-ticker-speed" data-unit="s">25s</span>
+                </label>
+                <div class="admin__range-container">
+                  <input type="range" id="cfg-ticker-speed" class="admin__range" min="10" max="60" step="1">
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <footer class="admin__footer">
+          <button type="button" id="btn-admin-logout" class="admin__btn admin__btn--secondary">Cerrar Sesión</button>
+          <button type="button" id="btn-admin-reset" class="admin__btn admin__btn--danger">Restablecer</button>
+          <button type="submit" class="admin__btn admin__btn--primary">Guardar Cambios</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lógica de inicialización, administración y persistencia -->
+  <script src="main.js"></script>
+</body>
+</html>

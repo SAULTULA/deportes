@@ -1,0 +1,568 @@
+/* ==========================================================================
+   HOJA DE ESTILOS DEL REPRODUCTOR (METODOLOGÍA BEM)
+   ========================================================================== */
+
+/* Reseteo básico de viewport */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-bg-screen);
+  font-family: var(--font-family-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   BLOQUE PRINCIPAL: .player
+   ========================================================================== */
+.player {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--color-bg-screen);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Elemento contenedor del video iframe */
+.player__screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Elemento iframe de YouTube a pantalla completa */
+.player__iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* Capa flotante con z-index superior para badges, logo y ticker */
+.player__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   ELEMENTO: Cartel "EN VIVO" / Botón de Administración (.player__badge)
+   Cuadro rojo con letras blancas. Actúa además como acceso al panel admin.
+   ========================================================================== */
+.player__badge {
+  position: absolute;
+  top: var(--live-badge-top);
+  left: var(--live-badge-left);
+  transform: scale(var(--live-badge-scale));
+  transform-origin: top left;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--color-live-bg);
+  color: var(--color-live-text);
+  padding: var(--live-badge-padding-y) var(--live-badge-padding-x);
+  border-radius: var(--live-badge-border-radius);
+  box-shadow: var(--shadow-overlay);
+  user-select: none;
+  z-index: 20;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.player__badge:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 14px rgba(220, 20, 60, 0.6);
+}
+
+.player__badge:active {
+  transform: scale(calc(var(--live-badge-scale) * 0.95));
+}
+
+/* Punto pulsante indicador de transmisión en directo */
+.player__badge-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-live-dot);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--color-live-glow);
+  animation: pulseLive 1.4s infinite ease-in-out;
+}
+
+/* Texto del cartel En Vivo */
+.player__badge-text {
+  font-size: var(--live-badge-font-size);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-live-text);
+  line-height: 1;
+}
+
+/* ==========================================================================
+   ELEMENTO: Logo flotante (.player__logo)
+   ========================================================================== */
+.player__logo {
+  position: absolute;
+  top: var(--logo-top);
+  right: var(--logo-right);
+  width: var(--logo-width);
+  height: var(--logo-height);
+  transform: scale(var(--logo-scale));
+  transform-origin: top right;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  z-index: 20;
+  transition: transform 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+/* Imagen del logo */
+.player__logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
+}
+
+/* ==========================================================================
+   ELEMENTO: Ticker / Pasarela inferior (.player__ticker)
+   Fondo azul y letras blancas
+   ========================================================================== */
+.player__ticker {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--ticker-height);
+  background-color: var(--color-ticker-bg);
+  border-top: 1px solid var(--color-ticker-border);
+  box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  z-index: 20;
+  pointer-events: none;
+  transition: height 0.15s ease;
+}
+
+/* Pista animada para la pasarela continua e infinita */
+.player__ticker-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: tickerMarquee var(--ticker-speed) linear infinite;
+}
+
+/* Grupo de texto repetido para garantizar continuidad fluida */
+.player__ticker-group {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-right: 40px;
+}
+
+/* Texto del ticker */
+.player__ticker-text {
+  font-size: var(--ticker-font-size);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-ticker-text);
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  transition: font-size 0.15s ease;
+}
+
+/* Separadores o estrellas del ticker */
+.player__ticker-star {
+  color: var(--color-ticker-star);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 2px;
+}
+
+/* ==========================================================================
+   BLOQUE: PANEL DE ADMINISTRACIÓN (.admin)
+   ========================================================================== */
+.admin {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.admin--open {
+  display: flex;
+}
+
+.admin__backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.admin__dialog {
+  position: relative;
+  z-index: 10;
+  background-color: var(--color-admin-bg);
+  border: 1px solid var(--color-admin-border);
+  border-radius: 12px;
+  width: min(96vw, 560px);
+  max-height: min(92vh, 620px);
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.85);
+  color: var(--color-admin-text);
+  overflow: hidden;
+  animation: adminModalFadeIn 0.2s ease-out;
+}
+
+.admin__dialog--login {
+  width: min(92vw, 360px);
+  max-height: auto;
+}
+
+/* Encabezado fijo */
+.admin__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--color-admin-border);
+  background-color: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+}
+
+.admin__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-admin-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin__close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-admin-text-muted);
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.admin__close-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Barra de pestañas para navegación rápida sin scroll */
+.admin__tabs {
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid var(--color-admin-border);
+  padding: 3px 14px 0 14px;
+  gap: 4px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.admin__tab {
+  background: transparent;
+  border: none;
+  color: var(--color-admin-text-muted);
+  padding: 7px 11px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.admin__tab:hover {
+  color: #ffffff;
+}
+
+.admin__tab--active {
+  color: #4da3ff;
+  border-bottom-color: #0461d4;
+}
+
+/* Formulario con flexbox para scroll interno sin cortar footer */
+.admin__form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Contenedor scrolleable con altura restringida */
+.admin__body {
+  padding: 14px 18px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Scrollbar estilizada */
+.admin__body::-webkit-scrollbar {
+  width: 6px;
+}
+.admin__body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+.admin__body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+.admin__body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Sección de configuración */
+.admin__section {
+  background-color: var(--color-admin-surface);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin__section--hidden {
+  display: none !important;
+}
+
+.admin__section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #4da3ff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.admin__field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.admin__field-grid--3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.admin__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-admin-text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin__label-value {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.admin__input, 
+.admin__textarea {
+  background-color: var(--color-admin-input-bg);
+  border: 1px solid var(--color-admin-border);
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.admin__textarea {
+  resize: vertical;
+  min-height: 52px;
+  line-height: 1.35;
+}
+
+.admin__input:focus, 
+.admin__textarea:focus {
+  border-color: var(--color-admin-primary);
+}
+
+.admin__range-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin__range {
+  flex: 1;
+  accent-color: var(--color-admin-primary);
+  cursor: pointer;
+  height: 5px;
+}
+
+/* Alertas */
+.admin__alert {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  display: none;
+}
+
+.admin__alert--error {
+  background-color: rgba(220, 20, 60, 0.2);
+  border: 1px solid var(--color-admin-danger);
+  color: #ff8585;
+}
+
+.admin__alert--success {
+  background-color: rgba(46, 204, 113, 0.2);
+  border: 1px solid #2ecc71;
+  color: #79e0a0;
+}
+
+.admin__alert--visible {
+  display: block;
+}
+
+/* Pie fijo con botones siempre visibles */
+.admin__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--color-admin-border);
+  background-color: rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.admin__btn {
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.admin__btn--primary {
+  background-color: var(--color-admin-primary);
+  color: #ffffff;
+}
+
+.admin__btn--primary:hover {
+  background-color: var(--color-admin-primary-hover);
+}
+
+.admin__btn--secondary {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.admin__btn--secondary:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+.admin__btn--danger {
+  background-color: transparent;
+  border: 1px solid rgba(220, 20, 60, 0.4);
+  color: #ff7575;
+}
+
+.admin__btn--danger:hover {
+  background-color: rgba(220, 20, 60, 0.15);
+}
+
+/* ==========================================================================
+   ANIMACIONES
+   ========================================================================== */
+
+@keyframes pulseLive {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+    box-shadow: 0 0 3px var(--color-live-glow);
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+    box-shadow: 0 0 8px var(--color-live-glow);
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+    box-shadow: 0 0 3px var(--color-live-glow);
+  }
+}
+
+@keyframes tickerMarquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes adminModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

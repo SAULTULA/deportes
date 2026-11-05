@@ -1,0 +1,74 @@
+/* ==========================================================================
+   VARIABLES DE DISEÑO Y CONFIGURACIÓN VISUAL
+   ========================================================================== */
+
+:root {
+  /* ========================================================================
+     1. CONTROLES RÁPIDOS DE TAMAÑO Y POSICIÓN (Valores por defecto)
+     ======================================================================== */
+
+  /* --- TAMAÑO Y POSICIÓN DEL CARTEL "EN VIVO" (Arriba a la izquierda) --- */
+  --live-badge-scale: 1;
+  --live-badge-font-size: 14px;
+  --live-badge-padding-y: 6px;
+  --live-badge-padding-x: 12px;
+  --live-badge-border-radius: 4px;
+  --live-badge-top: 15px;
+  --live-badge-left: 15px;
+
+  /* --- TAMAÑO Y POSICIÓN DEL LOGO hit.png (Arriba a la derecha) --- */
+  --logo-width: 30px;
+  --logo-height: 20px;
+  --logo-scale: 1;
+  --logo-top: 15px;
+  --logo-right: 15px;
+
+  /* --- TICKER / PASARELA DE TEXTO INFERIOR --- */
+  --ticker-height: 38px;
+  --ticker-font-size: 14px;
+  --ticker-speed: 25s;
+
+
+  /* ========================================================================
+     2. PALETA DE COLORES Y ESTILOS
+     ======================================================================== */
+
+  /* Fondo general del reproductor */
+  --color-bg-screen: #000000;
+  --color-text-white: #ffffff;
+
+  /* Cartel EN VIVO: Cuadro rojo con letras blancas */
+  --color-live-bg: #dc143c;
+  --color-live-text: #ffffff;
+  --color-live-dot: #ffffff;
+  --color-live-glow: rgba(255, 255, 255, 0.85);
+
+  /* Ticker: Fondo azul Hits y letras blancas */
+  --color-ticker-bg: #0461d4;
+  --color-ticker-border: rgba(255, 255, 255, 0.25);
+  --color-ticker-text: #ffffff;
+  --color-ticker-star: #ffffff;
+
+  /* Sombras y desenfoques */
+  --shadow-overlay: 0 2px 10px rgba(0, 0, 0, 0.6);
+  --backdrop-blur-glass: blur(10px);
+
+  /* Tipografía */
+  --font-family-system: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ========================================================================
+     3. PANEL DE ADMINISTRACIÓN
+     ======================================================================== */
+  --color-admin-bg: rgba(15, 18, 26, 0.98);
+  --color-admin-surface: #181d2a;
+  --color-admin-border: rgba(255, 255, 255, 0.12);
+  --color-admin-primary: #0461d4;
+  --color-admin-primary-hover: #034ea8;
+  --color-admin-danger: #dc143c;
+  --color-admin-text: #ffffff;
+  --color-admin-text-muted: #9ba3b4;
+  --color-admin-input-bg: #0c0e14;
+}
