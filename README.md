@@ -10,8 +10,8 @@ El botón para administrar **es el propio cartel "EN VIVO"**:
 
 1. Haz clic sobre el cuadro rojo **"EN VIVO"** (arriba a la izquierda).
 2. Se abrirá la ventana emergente de autenticación:
-   * **Usuario:** `hit20`
-   * **Contraseña:** `online.com`
+   * **Usuario:** `***************`
+   * **Contraseña:** `********`
    *(Las credenciales están protegidas internamente mediante funciones criptográficas SHA-256; no están visibles en el código fuente ni en el HTML).*
 3. Una vez ingresado, el **Panel de Control** cuenta con pestañas de navegación rápida:
    * **📺 Video:** Modifica la URL o ID del canal / emisión de YouTube.
