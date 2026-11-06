@@ -95,9 +95,17 @@ async function fetchSheetConfig(url) {
   try {
     const response = await fetch(targetUrl, { cache: 'no-cache' });
     if (response.ok) {
-      const data = await response.json();
-      if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-        return data;
+      const text = await response.text();
+      if (!text || text.trim() === '') {
+        return {}; // Hoja conectada pero celda vacía
+      }
+      try {
+        const data = JSON.parse(text);
+        if (data && typeof data === 'object') {
+          return data;
+        }
+      } catch (parseErr) {
+        return {}; // Conectado con éxito
       }
     }
   } catch (err) {
@@ -311,9 +319,13 @@ function setupAdminPanel() {
     setSheetStatus(null, 'Verificando conexión con Google Sheets...');
     const data = await fetchSheetConfig(url);
     if (data !== null) {
-      setSheetStatus(true, 'Conectado a Google Sheets (Sincronización global activa)');
+      if (Object.keys(data).length === 0) {
+        setSheetStatus(true, 'Conectado a Google Sheets (Listo para guardar cambios)');
+      } else {
+        setSheetStatus(true, 'Conectado a Google Sheets (Sincronización global activa)');
+      }
     } else {
-      setSheetStatus(false, 'No se pudo conectar a Google Sheets (Verifica la URL o permisos)');
+      setSheetStatus(false, 'No se pudo conectar a Google Sheets (Verifica permisos: "Quién tiene acceso: Cualquier persona")');
     }
   }
 
