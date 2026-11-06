@@ -4,21 +4,21 @@
  * ==============================================================================
  */
 
-// Configuración predeterminada base
+// Configuración predeterminada base fijada con los valores de tu panel
 const DEFAULT_CONFIG = {
   youtubeUrl: 'https://www.youtube.com/watch?v=P-042o1mzn0',
-  logoWidth: 30,
-  logoHeight: 20,
+  logoWidth: 232,
+  logoHeight: 89,
   logoScale: 1,
-  logoTop: 15,
+  logoTop: 5,
   logoRight: 15,
   liveBadgeScale: 1,
   liveBadgeTop: 15,
   liveBadgeLeft: 15,
-  tickerText: '*** www.hits20radioonline.com.ar el portal de noticias de hits20 *** www.hits20radioonline.com la web de musica y noticias de hits20 *** www.ksmservicios.com.ar creacion web servicio para radios aplicaciones web y android ***',
+  tickerText: '*** www.hits20radioonline.com.ar el portal de noticias de hits20 *** www.hits20radioonline.com la web de musica y noticias de hits20 ***',
   tickerSpeed: 25,
-  tickerFontSize: 14,
-  tickerHeight: 38,
+  tickerFontSize: 34,
+  tickerHeight: 41,
   // URL de la aplicación web de Google Sheets (Google Apps Script)
   sheetUrl: 'https://script.google.com/macros/s/AKfycbwVt-dNZNFpz2vKHicUPiKdo3opuE391BifPqf53TZMBtm4p-Dp2OQH-mDHDvH88RNz/exec'
 };
