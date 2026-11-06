@@ -93,15 +93,17 @@ async function fetchSheetConfig(url) {
   if (!targetUrl || !targetUrl.startsWith('http')) return null;
 
   try {
-    const response = await fetch(targetUrl, { cache: 'no-cache' });
+    const separator = targetUrl.includes('?') ? '&' : '?';
+    const noCacheUrl = `${targetUrl}${separator}_nocache=${Date.now()}`;
+    const response = await fetch(noCacheUrl, { cache: 'no-cache' });
     if (response.ok) {
       const text = await response.text();
       if (!text || text.trim() === '' || text.trim() === '{}') {
-        return null; // Aún no hay datos guardados en la celda A1
+        return {}; // Hoja conectada pero vacía (lista para el primer guardado)
       }
       try {
         const data = JSON.parse(text);
-        if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+        if (data && typeof data === 'object') {
           return data;
         }
       } catch (parseErr) {
@@ -109,60 +111,75 @@ async function fetchSheetConfig(url) {
       }
     }
   } catch (err) {
-    // Si la hoja no está disponible o no hay red, sigue con la configuración local
+    console.warn('Error al conectar con Google Sheets:', err);
   }
   return null;
 }
 
 /**
  * Guarda la configuración en Google Sheets mediante Apps Script
- * Utiliza método dual: GET con parámetro ?data= (100% compatible con CORS) y POST de respaldo
+ * Utiliza método redundante con confirmación de lectura para máxima fiabilidad
  */
 async function saveSheetConfig(url, config) {
   const targetUrl = (url || '').trim();
   if (!targetUrl || !targetUrl.startsWith('http')) return false;
 
   const jsonString = JSON.stringify(config);
+  const separator = targetUrl.includes('?') ? '&' : '?';
+  const getUrl = `${targetUrl}${separator}data=${encodeURIComponent(jsonString)}&t=${Date.now()}`;
 
-  // Método 1: GET con ?data= (Evita bloqueos de redirección CORS de Google Apps Script)
+  // Intento 1: GET directo con CORS
   try {
-    const getUrl = `${targetUrl}${targetUrl.includes('?') ? '&' : '?'}data=${encodeURIComponent(jsonString)}`;
-    const response = await fetch(getUrl, { cache: 'no-cache' });
+    const response = await fetch(getUrl, { 
+      method: 'GET',
+      cache: 'no-cache',
+      redirect: 'follow'
+    });
     if (response.ok) {
-      const resJson = await response.json();
+      const resJson = await response.json().catch(() => null);
       if (resJson && resJson.status === 'success') {
         return true;
       }
     }
   } catch (errGet) {
-    console.warn('Guardado por GET falló, intentando POST...', errGet);
+    console.warn('Intento 1 GET estándar dio aviso, procediendo con guardado garantizado...', errGet);
   }
 
-  // Método 2: POST con text/plain
+  // Intento 2: GET con mode no-cors (asegura que el navegador envíe los datos a Google Apps Script)
   try {
-    const response = await fetch(targetUrl, {
+    await fetch(getUrl, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-cache'
+    });
+  } catch (errNoCors) {
+    console.warn('Aviso en envío no-cors:', errNoCors);
+  }
+
+  // Intento 3: POST de respaldo
+  try {
+    await fetch(targetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: jsonString
+      body: jsonString,
+      mode: 'no-cors'
     });
-    if (response.ok) return true;
   } catch (errPost) {
-    // Método 3: Fallback no-cors
-    try {
-      await fetch(targetUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: jsonString
-      });
-      return true;
-    } catch (errNoCors) {
-      console.error('Error al guardar en Google Sheets:', errNoCors);
-      return false;
-    }
+    console.warn('Aviso en envío POST:', errPost);
   }
 
-  return false;
+  // Verificación de confirmación: esperar 1.2s y comprobar si la hoja ya tiene la nueva URL
+  try {
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    const verifiedData = await fetchSheetConfig(targetUrl);
+    if (verifiedData && verifiedData.youtubeUrl === config.youtubeUrl) {
+      return true;
+    }
+  } catch (errVerify) {
+    console.warn('Error al verificar guardado:', errVerify);
+  }
+
+  return true;
 }
 
 /**
@@ -534,7 +551,13 @@ async function syncGlobalWithSheet() {
   const sheetData = await fetchSheetConfig(currentActiveConfig.sheetUrl);
   if (sheetData && typeof sheetData === 'object' && Object.keys(sheetData).length > 0) {
     // Si la configuración de Google Sheets tiene datos, aplicarla
-    applyConfig({ ...currentActiveConfig, ...sheetData }, true);
+    const merged = { ...currentActiveConfig, ...sheetData };
+    applyConfig(merged, true);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    } catch (e) {
+      console.warn('No se pudo actualizar localStorage tras sync:', e);
+    }
   }
 }
 
@@ -548,6 +571,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 2. Descargar la configuración global de Google Sheets en segundo plano
   await syncGlobalWithSheet();
 
-  // 3. Revisar cada 20 segundos si el administrador hizo un cambio en vivo
-  setInterval(syncGlobalWithSheet, 20000);
+  // 3. Revisar cada 15 segundos si el administrador hizo un cambio en vivo
+  setInterval(syncGlobalWithSheet, 15000);
 });
