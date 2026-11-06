@@ -20,7 +20,7 @@ const DEFAULT_CONFIG = {
   tickerFontSize: 14,
   tickerHeight: 38,
   // URL de la aplicación web de Google Sheets (Google Apps Script)
-  sheetUrl: ''
+  sheetUrl: 'https://script.google.com/macros/s/AKfycbwVt-dNZNFpz2vKHicUPiKdo3opuE391BifPqf53TZMBtm4p-Dp2OQH-mDHDvH88RNz/exec'
 };
 
 const STORAGE_KEY = 'hits20_live_config';
