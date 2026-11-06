@@ -1,10 +1,10 @@
 /**
  * ==============================================================================
- * REPRODUCTOR HITS 20 - LÓGICA PRINCIPAL Y PANEL DE ADMINISTRACIÓN
+ * REPRODUCTOR HITS 20 - LÓGICA PRINCIPAL, PANEL Y SINCRONIZACIÓN CON GOOGLE SHEETS
  * ==============================================================================
  */
 
-// Configuración predeterminada inicial
+// Configuración predeterminada base
 const DEFAULT_CONFIG = {
   youtubeUrl: 'https://www.youtube.com/watch?v=P-042o1mzn0',
   logoWidth: 30,
@@ -18,7 +18,9 @@ const DEFAULT_CONFIG = {
   tickerText: '*** www.hits20radioonline.com.ar el portal de noticias de hits20 *** www.hits20radioonline.com la web de musica y noticias de hits20 *** www.ksmservicios.com.ar creacion web servicio para radios aplicaciones web y android ***',
   tickerSpeed: 25,
   tickerFontSize: 14,
-  tickerHeight: 38
+  tickerHeight: 38,
+  // URL de la aplicación web de Google Sheets (Google Apps Script)
+  sheetUrl: ''
 };
 
 const STORAGE_KEY = 'hits20_live_config';
@@ -27,6 +29,9 @@ const AUTH_SESSION_KEY = 'hits20_admin_auth';
 // Hashes criptográficos SHA-256 (usuario y contraseña protegidos)
 const HASH_AUTH_USER = '4dc9b3b338eddb5fdd567fefd0f77cb8060976af3fe3dce63ca490e12b5d9bd2';
 const HASH_AUTH_PASS = '37c2028b3df0df9a8688a73d6c2045b2c97ade8e2a05ca7fb310d4932b91e20a';
+
+// Estado en memoria de la configuración activa
+let currentActiveConfig = { ...DEFAULT_CONFIG };
 
 /**
  * Genera hash SHA-256 de una cadena de texto
@@ -66,9 +71,9 @@ function extractYouTubeId(url) {
 }
 
 /**
- * Obtiene la configuración actual (desde localStorage o por defecto)
+ * Obtiene la configuración local almacenada en caché
  */
-function getActiveConfig() {
+function getLocalConfig() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -81,9 +86,64 @@ function getActiveConfig() {
 }
 
 /**
+ * Descarga la configuración global desde Google Sheets (Apps Script Web App)
+ */
+async function fetchSheetConfig(url) {
+  const targetUrl = (url || currentActiveConfig.sheetUrl || '').trim();
+  if (!targetUrl || !targetUrl.startsWith('http')) return null;
+
+  try {
+    const response = await fetch(targetUrl, { cache: 'no-cache' });
+    if (response.ok) {
+      const data = await response.json();
+      if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+        return data;
+      }
+    }
+  } catch (err) {
+    // Si la hoja no está disponible o no hay red, sigue con la configuración local
+  }
+  return null;
+}
+
+/**
+ * Guarda la configuración en Google Sheets mediante Apps Script
+ */
+async function saveSheetConfig(url, config) {
+  const targetUrl = (url || '').trim();
+  if (!targetUrl || !targetUrl.startsWith('http')) return false;
+
+  try {
+    // Usamos text/plain para evitar bloqueos de preflight OPTIONS en Google Apps Script
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(config)
+    });
+    return response.ok;
+  } catch (err) {
+    // En caso de que el navegador bloquee la lectura de la respuesta redirigida de Apps Script,
+    // intentamos enviar con mode no-cors para asegurar que el POST llegue y actualice la hoja
+    try {
+      await fetch(targetUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(config)
+      });
+      return true;
+    } catch (err2) {
+      console.error('Error al guardar en Google Sheets:', err2);
+      return false;
+    }
+  }
+}
+
+/**
  * Aplica los valores de configuración a las variables CSS y al DOM
  */
 function applyConfig(config, updateVideo = true) {
+  currentActiveConfig = { ...config };
   const root = document.documentElement;
 
   // Variables CSS del Logo
@@ -106,7 +166,9 @@ function applyConfig(config, updateVideo = true) {
   // Texto del Ticker
   const tickerElements = document.querySelectorAll('.player__ticker-text');
   tickerElements.forEach(el => {
-    el.textContent = config.tickerText;
+    if (el.textContent !== config.tickerText) {
+      el.textContent = config.tickerText;
+    }
   });
 
   // URL del reproductor de video
@@ -160,6 +222,10 @@ function setupAdminPanel() {
   const inputTickerFontSize = document.getElementById('cfg-ticker-font-size');
   const inputTickerHeight = document.getElementById('cfg-ticker-height');
 
+  const inputSheetUrl = document.getElementById('cfg-sheet-url');
+  const sheetDot = document.getElementById('admin-sheet-dot');
+  const sheetText = document.getElementById('admin-sheet-text');
+
   const btnReset = document.getElementById('btn-admin-reset');
   const btnLogout = document.getElementById('btn-admin-logout');
 
@@ -192,7 +258,6 @@ function setupAdminPanel() {
     panelAlert.classList.remove('admin__alert--visible');
   }
 
-  // Verifica si el usuario ya inició sesión
   function isAuthenticated() {
     return sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
   }
@@ -231,14 +296,43 @@ function setupAdminPanel() {
   function openPanel() {
     closeAllModals();
     syncFormWithCurrentConfig();
+    checkSheetConnection();
     panelModal.classList.add('admin--open');
+  }
+
+  // Comprueba el estado de la conexión a Google Sheets
+  async function checkSheetConnection() {
+    const url = inputSheetUrl.value.trim();
+    if (!url) {
+      setSheetStatus(null, 'Modo Local (Pega la URL de tu Google Sheet para sincronizar a todos los usuarios)');
+      return;
+    }
+
+    setSheetStatus(null, 'Verificando conexión con Google Sheets...');
+    const data = await fetchSheetConfig(url);
+    if (data !== null) {
+      setSheetStatus(true, 'Conectado a Google Sheets (Sincronización global activa)');
+    } else {
+      setSheetStatus(false, 'No se pudo conectar a Google Sheets (Verifica la URL o permisos)');
+    }
+  }
+
+  function setSheetStatus(isOnline, message) {
+    if (!sheetDot || !sheetText) return;
+    sheetDot.className = 'admin__status-dot';
+    if (isOnline === true) {
+      sheetDot.classList.add('admin__status-dot--online');
+    } else if (isOnline === false) {
+      sheetDot.classList.add('admin__status-dot--offline');
+    }
+    sheetText.textContent = message;
   }
 
   // Rellena los campos del formulario con la configuración activa
   function syncFormWithCurrentConfig() {
-    const config = getActiveConfig();
+    const config = currentActiveConfig;
 
-    inputYoutube.value = config.youtubeUrl;
+    inputYoutube.value = config.youtubeUrl || DEFAULT_CONFIG.youtubeUrl;
 
     inputLogoWidth.value = config.logoWidth;
     inputLogoHeight.value = config.logoHeight;
@@ -254,6 +348,8 @@ function setupAdminPanel() {
     inputTickerSpeed.value = config.tickerSpeed;
     inputTickerFontSize.value = config.tickerFontSize || DEFAULT_CONFIG.tickerFontSize;
     inputTickerHeight.value = config.tickerHeight || DEFAULT_CONFIG.tickerHeight;
+
+    inputSheetUrl.value = config.sheetUrl || DEFAULT_CONFIG.sheetUrl;
 
     updateLabelBadges();
   }
@@ -285,7 +381,8 @@ function setupAdminPanel() {
       tickerText: inputTickerText.value.trim() || DEFAULT_CONFIG.tickerText,
       tickerSpeed: parseInt(inputTickerSpeed.value, 10) || DEFAULT_CONFIG.tickerSpeed,
       tickerFontSize: parseInt(inputTickerFontSize.value, 10) || DEFAULT_CONFIG.tickerFontSize,
-      tickerHeight: parseInt(inputTickerHeight.value, 10) || DEFAULT_CONFIG.tickerHeight
+      tickerHeight: parseInt(inputTickerHeight.value, 10) || DEFAULT_CONFIG.tickerHeight,
+      sheetUrl: inputSheetUrl.value.trim() || DEFAULT_CONFIG.sheetUrl
     };
   }
 
@@ -295,6 +392,8 @@ function setupAdminPanel() {
     const liveValues = collectFormValues();
     applyConfig(liveValues, false);
   });
+
+  inputSheetUrl.addEventListener('change', checkSheetConnection);
 
   // Procesar Login con verificación SHA-256
   loginForm.addEventListener('submit', async (e) => {
@@ -316,34 +415,56 @@ function setupAdminPanel() {
     }
   });
 
-  // Guardar Cambios en localStorage
-  panelForm.addEventListener('submit', (e) => {
+  // Guardar Cambios: Actualiza localmente y en Google Sheets para todos los usuarios
+  panelForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const updatedConfig = collectFormValues();
 
+    // 1. Guardar en almacenamiento local
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedConfig));
       applyConfig(updatedConfig, true);
-
-      panelAlert.textContent = '¡Configuración guardada exitosamente!';
-      panelAlert.className = 'admin__alert admin__alert--success admin__alert--visible';
-
-      setTimeout(() => {
-        panelAlert.classList.remove('admin__alert--visible');
-      }, 3000);
     } catch (err) {
-      panelAlert.textContent = 'Error al guardar en el almacenamiento local.';
-      panelAlert.className = 'admin__alert admin__alert--error admin__alert--visible';
+      console.warn('Error en localStorage:', err);
     }
+
+    if (updatedConfig.sheetUrl) {
+      panelAlert.textContent = 'Guardando cambios en Google Sheets...';
+      panelAlert.className = 'admin__alert admin__alert--visible';
+
+      const savedSheet = await saveSheetConfig(updatedConfig.sheetUrl, updatedConfig);
+
+      if (savedSheet) {
+        panelAlert.textContent = '¡Guardado global en Google Sheets exitoso! Todos los usuarios verán los cambios.';
+        panelAlert.className = 'admin__alert admin__alert--success admin__alert--visible';
+        setSheetStatus(true, 'Conectado a Google Sheets (Sincronización global activa)');
+      } else {
+        panelAlert.textContent = 'Guardado localmente. No se pudo actualizar el Sheet (Verifica la URL de Apps Script).';
+        panelAlert.className = 'admin__alert admin__alert--error admin__alert--visible';
+        setSheetStatus(false, 'Error al subir a Google Sheets');
+      }
+    } else {
+      panelAlert.textContent = 'Guardado localmente. Si quieres que lo vean todos los usuarios, pega la URL de tu Google Sheet en la pestaña "Google Sheets".';
+      panelAlert.className = 'admin__alert admin__alert--success admin__alert--visible';
+      setSheetStatus(null, 'Modo Local');
+    }
+
+    setTimeout(() => {
+      panelAlert.classList.remove('admin__alert--visible');
+    }, 4500);
   });
 
   // Restablecer por defecto
   if (btnReset) {
-    btnReset.addEventListener('click', () => {
-      if (confirm('¿Desea restablecer todos los valores originales?')) {
+    btnReset.addEventListener('click', async () => {
+      if (confirm('¿Desea restablecer todos los valores originales en este equipo y en Google Sheets?')) {
         localStorage.removeItem(STORAGE_KEY);
         applyConfig(DEFAULT_CONFIG, true);
         syncFormWithCurrentConfig();
+
+        if (DEFAULT_CONFIG.sheetUrl) {
+          await saveSheetConfig(DEFAULT_CONFIG.sheetUrl, DEFAULT_CONFIG);
+        }
 
         panelAlert.textContent = 'Valores restablecidos a los predeterminados.';
         panelAlert.className = 'admin__alert admin__alert--success admin__alert--visible';
@@ -373,9 +494,32 @@ function setupAdminPanel() {
   });
 }
 
+/**
+ * Sincroniza periódicamente con Google Sheets para que cualquier usuario conectado
+ * reciba cambios en vivo sin necesidad de recargar la página
+ */
+async function syncGlobalWithSheet() {
+  if (!currentActiveConfig.sheetUrl) return;
+
+  const sheetData = await fetchSheetConfig(currentActiveConfig.sheetUrl);
+  if (sheetData && typeof sheetData === 'object') {
+    const hasChanges = JSON.stringify(sheetData) !== JSON.stringify(currentActiveConfig);
+    if (hasChanges) {
+      applyConfig({ ...currentActiveConfig, ...sheetData }, true);
+    }
+  }
+}
+
 // Inicializar al cargar el DOM
-document.addEventListener('DOMContentLoaded', () => {
-  const config = getActiveConfig();
-  applyConfig(config, true);
+document.addEventListener('DOMContentLoaded', async () => {
+  // 1. Cargar primero de caché local / predeterminados para visualización inmediata
+  const localConfig = getLocalConfig();
+  applyConfig(localConfig, true);
   setupAdminPanel();
+
+  // 2. Descargar la configuración global de Google Sheets en segundo plano
+  await syncGlobalWithSheet();
+
+  // 3. Revisar cada 20 segundos si el administrador hizo un cambio en vivo
+  setInterval(syncGlobalWithSheet, 20000);
 });

@@ -374,6 +374,12 @@ html, body {
   gap: 6px;
 }
 
+.admin__help-text {
+  font-size: 0.78rem;
+  color: var(--color-admin-text-muted);
+  line-height: 1.4;
+}
+
 .admin__field {
   display: flex;
   flex-direction: column;
@@ -445,6 +451,37 @@ html, body {
   accent-color: var(--color-admin-primary);
   cursor: pointer;
   height: 5px;
+}
+
+/* Indicador de estado de conexión a la nube */
+.admin__status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-admin-text);
+}
+
+.admin__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #888888;
+}
+
+.admin__status-dot--online {
+  background-color: #2ecc71;
+  box-shadow: 0 0 8px #2ecc71;
+}
+
+.admin__status-dot--offline {
+  background-color: #e74c3c;
+  box-shadow: 0 0 8px #e74c3c;
 }
 
 /* Alertas */
