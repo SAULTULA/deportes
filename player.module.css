@@ -564,6 +564,123 @@ html, body {
 }
 
 /* ==========================================================================
+   ADAPTATIVIDAD RESPONSIVA (MÓVILES Y PANTALLAS PEQUEÑAS)
+   Evita que en celulares el logo, cartel y ticker se vean desproporcionados
+   ========================================================================== */
+
+/* Tablets y teléfonos en general (ancho <= 768px) */
+@media (max-width: 768px) {
+  /* Cartel EN VIVO en pantallas medianas / móviles */
+  .player__badge {
+    top: clamp(6px, 1.8vh, 12px);
+    left: clamp(8px, 2.5vw, 14px);
+    padding: 4px 10px;
+    gap: 5px;
+    transform: scale(min(var(--live-badge-scale), 0.95));
+  }
+
+  .player__badge-text {
+    font-size: clamp(11px, 2.8vw, 13px);
+  }
+
+  .player__badge-dot {
+    width: 7px;
+    height: 7px;
+  }
+
+  /* Logo adaptado proporcionalmente para no invadir la pantalla */
+  .player__logo {
+    top: clamp(4px, 1.5vh, 8px);
+    right: clamp(8px, 2.5vw, 14px);
+    width: clamp(110px, 30vw, 150px);
+    height: auto;
+    max-height: clamp(40px, 10vh, 58px);
+    aspect-ratio: 232 / 89;
+    transform: scale(min(var(--logo-scale), 1));
+  }
+
+  /* Ticker inferior adaptado */
+  .player__ticker {
+    height: clamp(28px, 5.5vh, 34px);
+  }
+
+  .player__ticker-text {
+    font-size: clamp(15px, 3.8vw, 22px);
+  }
+}
+
+/* Teléfonos móviles estándar en vertical (ancho <= 480px) */
+@media (max-width: 480px) {
+  /* Cartel EN VIVO compacto en celulares */
+  .player__badge {
+    top: clamp(5px, 1.2vh, 8px);
+    left: clamp(6px, 2vw, 10px);
+    padding: 3px 8px;
+    gap: 4px;
+    border-radius: 3px;
+    transform: scale(min(var(--live-badge-scale), 0.88));
+  }
+
+  .player__badge-text {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .player__badge-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Logo refinado y no invasivo en celulares */
+  .player__logo {
+    top: clamp(3px, 1vh, 6px);
+    right: clamp(6px, 2vw, 10px);
+    width: clamp(95px, 28vw, 120px);
+    height: auto;
+    max-height: clamp(36px, 8.5vh, 46px);
+    aspect-ratio: 232 / 89;
+    transform: scale(min(var(--logo-scale), 0.95));
+  }
+
+  /* Ticker inferior en celulares */
+  .player__ticker {
+    height: clamp(24px, 4.8vh, 30px);
+  }
+
+  .player__ticker-text {
+    font-size: clamp(13px, 3.6vw, 16px);
+  }
+}
+
+/* Teléfonos en orientación horizontal (Landscape, altura <= 500px) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .player__badge {
+    top: 5px;
+    left: 8px;
+    padding: 2px 7px;
+    transform: scale(0.82);
+  }
+
+  .player__logo {
+    top: 4px;
+    right: 8px;
+    width: clamp(90px, 20vw, 115px);
+    height: auto;
+    max-height: 38px;
+    aspect-ratio: 232 / 89;
+    transform: scale(0.88);
+  }
+
+  .player__ticker {
+    height: 24px;
+  }
+
+  .player__ticker-text {
+    font-size: 13px;
+  }
+}
+
+/* ==========================================================================
    ANIMACIONES
    ========================================================================== */
 
